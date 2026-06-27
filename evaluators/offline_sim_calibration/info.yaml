@@ -1,0 +1,64 @@
+name: offline_sim_calibration
+summary: |
+  Score how well the agent's offline (in-workspace) Python simulator
+  predicts the real ChampSim IPC. The agent is encouraged by the prompt
+  to test its replacement-policy hypothesis with a pure-Python LLC
+  simulator under `tests/` (or `sim_test.py`) before the single-shot
+  submit. This evaluator measures the *calibration* of that offline
+  predictor: how close were its predicted IPCs to the ChampSim numbers
+  recorded in submit_outcomes.jsonl?
+
+  Reads three things:
+    - results_dir/workspace/                — locate the agent's sim file
+    - results_dir/submit_outcomes.jsonl     — real ChampSim per-trace IPC
+    - workload_pools/champsim/decoded/*.trace.txt (optional) — if
+      present, the evaluator can re-run the agent's simulator; otherwise
+      it returns ok=false with "decoded traces unavailable" — we DO NOT
+      fall back to fabricated numbers.
+
+  The expected interface is loose: agents write whatever Python they
+  want. We probe (in this order):
+
+    1. Module-level `predict_ipc(trace_path) -> float`
+    2. Module-level `simulate(trace_path) -> dict` (look for `ipc` key)
+    3. Class `Simulator` with a `.run(trace_path)` method returning IPC
+    4. Module-level `main()` that prints lines like
+       "<trace>: ipc=<float>" or "<trace>: hitrate=<float>"
+
+  If none of these match, return ok=false with "interface mismatch".
+
+inputs:
+  - results_dir/workspace/   (one of: sim_test.py, tests/simulator.py, tests/sim_test.py)
+  - results_dir/submit_outcomes.jsonl
+  - workload_pools/champsim/decoded/<trace>.trace.txt   (optional)
+
+config_schema:
+  trace_subset:
+    type: list[string]
+    default: null
+    desc: "Restrict to a subset of traces (basename match). Default: all 6."
+  per_trace_timeout_s:
+    type: int
+    default: 300
+    desc: "Cap per-trace execution time. Aborted traces are recorded with error=timeout."
+  candidate_files:
+    type: list[string]
+    default: [sim_test.py, tests/simulator.py, tests/sim_test.py]
+    desc: "Try these workspace-relative paths in order."
+
+output_schema:
+  ok: bool
+  reason: string                       # only when ok=false
+  sim_file: string                     # path of the agent's simulator
+  interface: string                    # one of: predict_ipc | simulate | Simulator.run | print_lines | none
+  mean_absolute_error: number | null
+  direction_accuracy: number | null    # fraction of traces where rank-vs-LRU matched
+  best_predicted_trace: string | null  # smallest |pred-real|
+  worst_predicted_trace: string | null # largest |pred-real|
+  per_trace_error:
+    <trace>:
+      predicted: number | null
+      real: number | null
+      abs_error: number | null
+      sign_correct: bool | null
+      error: string | null             # populated on per-trace failure

@@ -1,0 +1,41 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "ARCHEVAL"
+version = "0.1.0a0"
+description = "ARCHEVAL prerelease: open-ended computer-architecture evaluation platform for AI agents"
+requires-python = ">=3.11"
+dependencies = [
+    "pyyaml>=6.0",
+    "mcp>=1.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0",
+    "pytest-cov>=4.0",
+]
+
+[project.scripts]
+archeval = "archbench.cli:main"
+archeval-proxy = "archbench.serving.cli:main"
+ARCHEVAL = "archbench.cli:main"
+ARCHEVAL-proxy = "archbench.serving.cli:main"
+archbench = "archbench.cli:main"
+archbench-proxy = "archbench.serving.cli:main"
+
+[tool.setuptools.packages.find]
+include = ["archbench*", "simulators*", "runtimes*", "evaluators*"]
+exclude = ["tests*", "docs*", "challenges*"]
+
+[tool.setuptools.package-data]
+"archbench.serving" = ["routes.yaml"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+# pytest-asyncio: strict mode requires explicit @pytest.mark.asyncio decoration
+# (see tests/test_proxy.py); this avoids affecting any sync tests in the suite.
+asyncio_mode = "strict"

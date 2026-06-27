@@ -1,0 +1,36 @@
+# ccache-enabled ChampSim image — NON-DESTRUCTIVE: new tag
+# (localhost/archbench-champsim-ccache:v6), layered on the stock champsim:v6.
+# The stock image and all challenges/baselines are untouched.
+#
+# Why: ChampSim is C++ and the agent's branch predictor compiles INTO the
+# binary, so simulate.sh recompiles the whole sim every submit. ccache wraps
+# g++ (via /usr/lib/ccache on PATH) and is content-addressed: the unchanged
+# ChampSim core hits cache, only the agent's changed module truly recompiles.
+# Identical source -> identical object -> identical binary -> identical MPKI
+# (proven by scripts/champsim_ccache_parity.sh before any real use).
+#
+# To use: set ARCHBENCH_CHAMPSIM_IMAGE=localhost/archbench-champsim-ccache:v6
+# when calling the STOCK simulate.sh (no script edits needed).
+#
+# Build (on a compute node with podman):
+#   podman build -t localhost/archbench-champsim-ccache:v6 \
+#       -f simulators/champsim/Dockerfile.ccache .
+FROM localhost/archbench-champsim:v6
+
+RUN apt-get update && apt-get install -y --no-install-recommends ccache \
+    && rm -rf /var/lib/apt/lists/*
+
+# Transparent compiler wrapping + a persistent in-image cache dir.
+ENV PATH=/usr/lib/ccache:${PATH}
+ENV CCACHE_DIR=/opt/ccache
+ENV CCACHE_MAXSIZE=3G
+
+# Prime the cache: rebuild the stock default config WITH ccache active so the
+# config-independent ChampSim core objects land in /opt/ccache. At runtime the
+# agent's candidate module is the only real recompile; the core hits this cache.
+RUN mkdir -p /opt/ccache \
+    && cd /work/runtimes/champsim \
+    && rm -rf .csconfig _configuration.mk obj .depend bin \
+    && ./config.sh --compile-all-modules champsim_config.json \
+    && make -j"$(nproc)" bin/champsim \
+    && ccache -s

@@ -1,0 +1,17 @@
+# run.example.yaml — the front door. One file describes one benchmark run.
+#   archbench run run.example.yaml            # everything from this file
+#   archbench run run.example.yaml claude_code  # ...but override the agent
+#
+# Copy this, edit, run. No command-line flag soup.
+
+challenge: branch_predictor   # family name (or an explicit challenges/... path)
+tier: L1                      # L1 | L2 | L3   (default: L3 — the headline tier)
+agent: mini                   # the agent runtime (mini | claude_code | codex | gemini | archharness)
+
+# --- optional (sensible defaults if omitted) ---
+model: gemma4                 # runtime's default_model if omitted
+anonymize: true               # default true — fair head-to-head numbers
+# run_name: my_run            # auto-generated if omitted
+# results_dir: results        # default <repo>/results
+# dev: false                  # bind-mount runtime src (dev_capable runtimes only)
+# thinking: false             # reasoning mode

@@ -1,0 +1,17 @@
+#!/bin/bash
+# ONE CAMPAIGN, ONE COMMIT (lessons §26.5, §27): refuse commits while an
+# archbench campaign job is alive — every campaign cell re-checks
+# `git rev-parse HEAD` against its PINNED_HEAD and silently refuses to
+# run if the repo moved. Two real incidents (wave-2 2026-06-10, catchup
+# 2026-06-11) each killed a campaign's remaining cells this way.
+# Override (knowingly): ARCHBENCH_ALLOW_COMMIT=1 git commit ...
+[ -n "${ARCHBENCH_ALLOW_COMMIT:-}" ] && exit 0
+command -v squeue >/dev/null 2>&1 || exit 0
+live=$(squeue -u "$USER" -h -o '%j %i %T' 2>/dev/null | grep -E '^archbench_' | grep -Ev 'SMOKE|smoke' || true)
+if [ -n "$live" ]; then
+  echo "pre-commit BLOCKED: live archbench campaign job(s) — a commit moves HEAD off their pin and kills remaining cells:" >&2
+  echo "$live" | sed 's/^/    /' >&2
+  echo "Wait for the campaign, or override consciously: ARCHBENCH_ALLOW_COMMIT=1 git commit ..." >&2
+  exit 1
+fi
+exit 0

@@ -1,0 +1,19 @@
+name: gemini
+image: localhost/archbench-agent-gemini:v6
+runtime_version: "0.38.1"
+default_model: gemini-3-pro-preview
+default_max_turns: 200
+default_round_timeout: 7200
+mode: bake_only
+
+# Bundled: Google Gemini CLI baked into image. Auth is per-user
+# OAuth credentials docker-cp'd in at session start (see GeminiRuntime).
+type: bundled
+vendor: google
+auth:
+  method: oauth_token
+  host_path: ~/.gemini/oauth_creds.json
+  container_path: /home/agent/.gemini/oauth_creds.json
+allowed_models:
+  - gemini-3-pro-preview
+  - gemini-3-flash

@@ -1,0 +1,20 @@
+name: mcp
+protocol: mcp
+sim: timeloop
+description: |
+  SCAFFOLD: Streamable HTTP MCP server that bridges agents and the Timeloop
+  simulator container. Tool surface is currently identical to the ChampSim
+  connector (the protocol is universal); the per-sim seam is the
+  SimulatorPlugin behind handle_submit, not the tools themselves.
+  Tools: submit, submit_and_wait, check_submission, session_end,
+  browse_simulator, read_simulator_file.
+  See simulators/champsim/connector/tool_schema.py for the canonical tool list.
+default_port_range: [35000, 49000]
+log_path_pattern: "<results_dir>/mcp.log"
+supported_tools:
+  - submit
+  - submit_and_wait
+  - check_submission
+  - session_end
+  - browse_simulator
+  - read_simulator_file

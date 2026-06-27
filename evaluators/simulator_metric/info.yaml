@@ -1,0 +1,34 @@
+name: simulator_metric
+summary: |
+  Read the simulator's outcome (either from on-session submit_outcomes.jsonl
+  if bypass_if_present matches, or by re-running evaluate.sh on the
+  recovered workspace files), and emit geomean speedup vs baseline.json
+  plus per-trace IPC + LLC hit rate.
+
+inputs:
+  - results_dir/submit_outcomes.jsonl   # preferred if bypass_if_present hits
+  - results_dir/workspace/<impl files>  # fallback: re-evaluate
+  - challenge_dir/baseline.json         # reference numerator/denominator
+  - challenge_dir/evaluate.sh           # re-eval entry point
+
+config_schema:
+  bypass_if_present:
+    type: string
+    desc: "Filename inside results_dir; if it exists, skip re-eval and read this."
+  reference:
+    type: string
+    default: baseline.json
+    desc: "baseline file in the challenge dir."
+  report_fields:
+    type: list[string]
+    default: [geomean_speedup, per_trace_ipc, per_trace_hit_rate]
+    desc: "Which derived fields to include in the report."
+
+output_schema:
+  ok: bool
+  source: "submit_outcomes_jsonl | evaluate_sh | none"
+  geomean_speedup: float                 # vs baseline.average_ipc
+  per_trace_ipc: {trace: float, ...}
+  per_trace_hit_rate: {trace: float, ...}
+  raw_metric: dict                       # the underlying numbers
+  error: string                          # only if ok=false

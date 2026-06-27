@@ -1,0 +1,44 @@
+name: objective_definition_quality
+summary: |
+  Tier-2 LLM-as-judge evaluator over the agent's objective.md.
+
+  Used by fuzzy-multi-objective challenges (e.g. cnn_accelerator_codesign)
+  where the prose objective contains unquantified terms ("excellent",
+  "acceptable", "top X%") and the agent is required to formalize them.
+  Scores the formalization on four binary axes and returns an overall
+  0-4 score.
+
+  This is intentionally orthogonal to the trio-of-numbers Tier-3
+  evaluator: an agent that produces a defensible formalization and
+  hits middling numbers should score higher than one that hits good
+  numbers with a hand-wavy formalization.
+
+inputs:
+  - results_dir/workspace/<objective_file>   (default: objective.md)
+  - config.prose_objective                   (the fuzzy prose the agent
+                                              was asked to formalize)
+
+config_schema:
+  objective_file:
+    type: string
+    default: objective.md
+    desc: "Filename (relative to workspace/) containing the agent's formalization."
+  prose_objective:
+    type: string
+    desc: "The fuzzy prose objective the agent was asked to formalize."
+  min_chars:
+    type: int
+    default: 200
+    desc: "Deterministic floor — files under this length skip the judge."
+
+output_schema:
+  ok: bool                       # true unless objective_file missing / unreadable
+  file_present: bool
+  char_count: int
+  axes:
+    operational:    {score: 0_or_1, rationale: string}
+    defensible:     {score: 0_or_1, rationale: string}
+    covers_prose:   {score: 0_or_1, rationale: string}
+    tradeoff_aware: {score: 0_or_1, rationale: string}
+  overall_score: 0-4              # sum of the four binary axes
+  overall_rationale: string       # judge's free-form summary

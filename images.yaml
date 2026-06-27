@@ -1,0 +1,74 @@
+# images.yaml — the SINGLE SOURCE OF TRUTH for image identity.
+#
+# Every image string this repo uses (each simulators/<sim>/plugin.py
+# `docker_image`, each runtimes/<rt>/runner.py `docker_image`) is derived
+# from this manifest by archbench/core/images.py::fully_qualified(). To change a
+# tag, bump it HERE and nowhere else — the per-plugin/per-runtime literals
+# read it back (K3+; today they still hold their hardcoded string and a
+# golden test asserts the two agree byte-for-byte: tests/test_images_manifest.py).
+#
+# Registry prefix is "localhost/" for K0 (offline, no-push — today's
+# behavior). A per-site registry override (ARCHBENCH_IMAGE_REGISTRY) lands in K2.
+#
+# Naming rules (archbench/core/images.py):
+#   simulators.<key>  -> localhost/archbench-<key>:<tag>          (name defaults to archbench-<key>)
+#   agents.<key>      -> localhost/<name>:<tag>             (name comes from the entry)
+# The agents `name:` field is what makes claude_code -> "archbench-agent" (NO
+# -claude_code suffix — preserving today's reality) while the other four
+# follow the regular "archbench-agent-<rt>" shape.
+#
+# K0 scope: simulators + agents are populated and golden-tested. challenges
+# (docker_centric) remains an interface-only placeholder — left EMPTY on
+# purpose. sim_agents (the combined _l2agent images) is populated in K5 for
+# `archbench images` visibility/management; see the sim_agents block below.
+
+# Bump to invalidate caches / signal a manifest-schema change.
+version: 1
+
+# Registry namespace prefix. "localhost" keeps today's offline, no-push
+# behavior; a site MAY override via ARCHBENCH_IMAGE_REGISTRY in a later phase (K2).
+registry: localhost
+
+# ---- simulators ----  (name derives as archbench-<key>; tag is each sim's REAL tag)
+simulators:
+  champsim:  { tag: v6, build: simulators/champsim }
+  dramsys:   { tag: v6, build: simulators/dramsys }
+  ramulator: { tag: v6, build: simulators/ramulator }
+  scalesim:  { tag: v6, build: simulators/scalesim }
+  timeloop:  { tag: v6, build: simulators/timeloop }
+  astrasim:  { tag: v6, build: simulators/astrasim }
+  mnsim:     { tag: v6, build: simulators/mnsim }
+  gem5:      { tag: v7, build: simulators/gem5 }
+
+# ---- agents (runtimes) ----  (name is explicit: archbench-agent-<rt>, EXCEPT
+# claude_code which is intentionally "archbench-agent" with NO suffix)
+agents:
+  mini:        { name: archbench-agent-mini,        tag: v6, build: runtimes/mini }
+  gemini:      { name: archbench-agent-gemini,      tag: v6, build: runtimes/gemini }
+  codex:       { name: archbench-agent-codex,       tag: v6, build: runtimes/codex }
+  archharness: { name: archbench-agent-archharness, tag: v6, build: runtimes/archharness }
+  # intentional: no -claude_code suffix (preserve current reality —
+  # runtimes/claude_code/runner.py serves localhost/archbench-agent:v6).
+  claude_code: { name: archbench-agent,             tag: v6, build: runtimes/claude_code }
+
+# ---- combined (simulator_centric) images ----  (K5: visibility/management)
+# A combined image is a simulator image with the mini agent loop layered in
+# (built by scripts/build_l2agent_image.sh). agent_image_mode: simulator_centric
+# (legacy session_profile: sim_dev_env / agent_in_sim_image: true) selects it.
+#
+# CRITICAL invariant (K4 default-identity): each entry's fully_qualified() MUST
+# byte-equal archbench.core.image_plan::_l2agent_image(get_plugin(<sim>).docker_image)
+# — i.e. localhost/archbench-<sim>-l2agent:<sim_tag>. The `name:` is explicit (the
+# non-simulator naming rule) and `base:` records which simulator it layers on
+# so `archbench images build sim_agents` can delegate to build_l2agent_image.sh.
+# tests/test_docker_image_identity.py proves the equality. Add a sim here ONLY
+# when it actually has a combined image (today: champsim — the only sim used by
+# a simulator_centric L2 overlay).
+sim_agents:
+  champsim: { name: archbench-champsim-l2agent, tag: v6, base: champsim, recipe: scripts/build_l2agent_image.sh }
+  gem5:     { name: archbench-gem5-l2agent,     tag: v7, base: gem5,     recipe: scripts/build_l2agent_image.sh }
+  mnsim:    { name: archbench-mnsim-l2agent,    tag: v6, base: mnsim,    recipe: scripts/build_l2agent_image.sh }
+
+# ---- challenge-managed (docker_centric) images ----
+# EMPTY — docker_centric is interface-only in this design.
+challenges: {}

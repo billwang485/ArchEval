@@ -1,0 +1,40 @@
+name: cross_sim_discrepancy
+summary: |
+  Cross-simulator agreement score for multi-sim challenges
+  (docs/multi_sim_design.md). Reads the FINAL SIM_OK metric for EACH bound
+  simulator from submit_outcomes.jsonl (rows carry per-sim submission_id
+  prefixes, e.g. dramsys_sub_* vs ramulator_sub_*), extracts a metric field
+  (default bandwidth_gbps), and computes the cross-sim discrepancy as a
+  percentage vs a reference sim. LOWER is better (the simulators agree). The
+  coupling is computed here in the post-session layer, NOT in a single
+  coupling evaluate.sh, because each sim's evaluate.sh is sim-local.
+
+inputs:
+  - results_dir/submit_outcomes.jsonl   # per-sim SIM_OK rows
+  - challenge_dir/evaluation/baseline.json  # starter discrepancy (context)
+
+config_schema:
+  sims:
+    type: mapping
+    desc: >
+      {logical_name: submission_id_prefix}. Defaults from
+      challenge.simulators ({a: "a_", b: "b_"}). The prefix is what the
+      connector stamps onto each sim's submission_id.
+  metric_field:
+    type: string
+    default: bandwidth_gbps
+    desc: "The per-sim metric whose cross-sim agreement is scored."
+  reference_sim:
+    type: string
+    desc: >
+      Logical name of the sim used as the discrepancy denominator. Defaults
+      to the challenge's primary simulator if present, else the first sim.
+
+output:
+  ok: bool
+  complete: bool                  # False if any sim has no SIM_OK metric yet
+  score: float | null             # = discrepancy_pct (lower is better)
+  discrepancy_pct: float | null
+  per_sim_metric: mapping         # {sim: value}
+  pairwise_discrepancy_pct: mapping
+  starter_discrepancy_pct: float | null

@@ -1,0 +1,90 @@
+# Python
+__pycache__/
+*.py[cod]
+*.so
+.Python
+build/
+dist/
+# pip install -e . build artifact
+mini_architect_bench.egg-info/
+*.egg-info/
+*.egg
+.venv/
+venv/
+
+# Local release/upgrade backups
+.release_backups/
+
+# IDE
+.vscode/
+.idea/
+.cursor/
+.claude/
+*.swp
+*.swo
+.DS_Store
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+.mypy_cache/
+
+# Workloads / traces (large, distributed separately)
+# IMPORTANT: workload_pools/ is either a directory or a symlink to one. Either
+# way, nothing under workload_pools/ goes in git. New users create it during
+# setup.
+workload_pools
+workload_pools/
+*.champsimtrace.xz
+*.champsimtrace
+*.trace.txt
+
+# Docker tarballs (large binaries, distributed via NFS not git)
+docker/**/*.tar
+docker/**/*.tar.gz
+
+# Results (write target, never committed)
+results/*/
+!results/.gitkeep
+
+# Per-run debug dumps (podman runtime state, contains UID leaks)
+**/_eval_debug/
+
+# Per-challenge baseline raw logs / intermediate files (regenerable; large)
+challenges/*/baseline/_baseline.log
+challenges/*/baseline/_baseline_raw.json
+
+# SLURM
+slurm-*.out
+*.slurm.out
+*.out
+
+# Environment
+.env
+.env.local
+
+# Per-machine site config (docs/docker_management.md §6). site.example.yaml /
+# site.env.example are the tracked templates; the real site.yaml / site.env are
+# per-box and never committed. site.env holds machine-specific shell env for the
+# campaign scripts (vLLM endpoint, scratch); site.yaml holds the python side.
+site.yaml
+/site.yaml
+site.env
+/site.env
+
+# External clones / paper drafts that happen to live at the repo root
+Mini-Architect-Bench-Overleaf/
+
+# Scratch
+*.tmp
+*.log
+oom
+Untitled
+*.zip
+*.pdf
+image*.png
+archbench_*.out
+challenges_prep/
+runtimes/mini_old_prompt/

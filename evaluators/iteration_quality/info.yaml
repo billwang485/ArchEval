@@ -1,0 +1,15 @@
+name: iteration_quality
+tier: 2  # Process — the L1 (full-scaffold) tier's process measure
+summary: >
+  Pure arithmetic over submit_outcomes.jsonl: did scores improve across
+  the agent's real-simulator submits, how much budget was wasted on
+  unscored attempts, and did the agent stop while still improving.
+config:
+  metric_key: REQUIRED
+  direction: REQUIRED — lower | higher
+  max_submissions: optional override (default challenge.eval.max_submissions)
+output:
+  class: scored | no_ground_truth | not_configured
+  scored_fields: [attempts_total, outcomes, sim_ok_count, first_ok, best,
+    last_ok, improvement_from_first, improved, best_is_last,
+    wasted_attempts, budget_max, budget_used_fraction]

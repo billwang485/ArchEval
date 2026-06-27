@@ -1,0 +1,14 @@
+name: tool_use_audit
+tier: 2  # Process — the L2 (sim-dev-env) tier's process measure
+summary: >
+  Deterministic trajectory profile: did the agent read/edit/BUILD/RUN the
+  real simulator inside its container before its Oracle submit. The
+  arithmetic complement of trajectory_audit's drove_real_sim judge check.
+config:
+  build_patterns: optional regex list (defaults cover make/cmake/gcc/...)
+  run_patterns: optional regex list (declare per-sim in challenge.yaml)
+output:
+  class: scored | evaluator_error
+  scored_fields: [steps_total, bash_count, file_reads, file_edits, submits,
+    build_cmds, run_cmds, first_submit_step, built_before_first_submit,
+    ran_real_sim_before_first_submit, edit_build_run_loops]

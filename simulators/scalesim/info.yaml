@@ -1,0 +1,11 @@
+name: scalesim
+image: localhost/archbench-scalesim:v6
+verify_script: verify.sh
+cleanup_script: cleanup.sh
+default_timeout: 7200
+
+# Container layout — the SIM declares its own truth once; container cards,
+# audits, and L2 builds READ this instead of guessing by convention (the
+# /work/runtimes/<sim> template was fiction for gem5 + timeloop; lessons §26).
+layout:
+  source_root: /work/runtimes/scalesim

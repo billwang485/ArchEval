@@ -1,0 +1,59 @@
+name: gibbon_surrogate
+summary: |
+  Score how well the agent's offline (in-workspace) EDP surrogate predicts the
+  REAL MNSIM hardware EDP for the Gibbon co-design challenge. The L3 (architect)
+  tier asks the agent to build a fast surrogate of MNSIM's hardware-modeling
+  path -- predicting edp = energy_nj * latency_ns for a (NN + quant + PIM)
+  co-design point -- so it can search the Gibbon Table-I space offline before
+  its single real submit. This evaluator measures the *calibration* of that
+  surrogate: how close were its predicted EDPs to the MNSIM numbers recorded in
+  submit_outcomes.jsonl?
+
+  Reads:
+    - results_dir/workspace/            -- locate the agent's surrogate source
+    - results_dir/workspace/design.json -- the design the surrogate must score
+    - results_dir/submit_outcomes.jsonl -- real MNSIM EDP (edp_raw) of the
+                                           final SIM_OK submit
+
+  Only the HARDWARE EDP is graded (it is the REAL, deterministic MNSIM output).
+  Accuracy is the challenge's own calibrated surrogate oracle, not something the
+  agent is asked to re-predict, so it is not graded here.
+
+  Interface is loose; probed in order:
+    1. predict_edp(design_json_path) -> float
+    2. predict_metric(design_json_path) -> float
+    3. simulate(design_json_path) -> dict (look for 'edp'/'edp_raw') or float
+    4. class Simulator with .run(design_json_path) -> dict/float
+    5. python <sim>.py <design.json> printing a line "edp=<float>"
+  If none match, returns ok=false with "interface mismatch" -- numbers are
+  never fabricated.
+
+inputs:
+  - results_dir/workspace/ (one of: sim_test.py, tests/simulator.py, tests/sim_test.py, edp_surrogate.py)
+  - results_dir/workspace/design.json
+  - results_dir/submit_outcomes.jsonl
+
+config_schema:
+  per_trace_timeout_s:
+    type: int
+    default: 300
+    desc: "Cap surrogate execution time."
+  candidate_files:
+    type: list[string]
+    default: [sim_test.py, tests/simulator.py, tests/sim_test.py, edp_surrogate.py]
+    desc: "Try these workspace-relative paths in order."
+
+output_schema:
+  ok: bool
+  reason: string                       # only when ok=false
+  sim_file: string                     # path of the agent's surrogate
+  interface: string                    # predict_edp | predict_metric | simulate | Simulator.run | subprocess | none
+  mean_absolute_error: number | null   # |predicted_edp - real_edp|
+  direction_accuracy: number | null    # vs baseline edp (better/worse than NACIM)
+  per_trace_error:
+    design:
+      predicted: number | null
+      real: number | null
+      abs_error: number | null
+      sign_correct: bool | null
+      error: string | null

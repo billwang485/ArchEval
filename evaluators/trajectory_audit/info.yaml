@@ -1,0 +1,36 @@
+name: trajectory_audit
+summary: |
+  Read results_dir/trajectory.jsonl and run each declared sub-check
+  through the LLM judge. The judge sees:
+    - a compact summary of the trajectory (tool calls, key snippets)
+    - the recovered workspace files (paths + first ~2KB each)
+    - the check's prompt
+  Returns the parsed JSON verdict (including score + rationale + any
+  extra structured fields the prompt asked for) per check.
+
+inputs:
+  - results_dir/trajectory.jsonl
+  - results_dir/workspace/<files>   (optional context for judges)
+
+config_schema:
+  llm_judge:
+    type: enum [none, 0_or_1]
+    default: 0_or_1
+    desc: "If 0_or_1, run the LLM judge for each check (else just collect metrics)."
+  checks:
+    type: map[check_name → {prompt: string}]
+    desc: |
+      Each check has a `prompt:` field. The judge is asked to return
+      JSON; the parsed dict is stored under that check name.
+
+output_schema:
+  ok: bool
+  trajectory_summary:
+    bash_calls: int
+    check_storage_calls: int
+    other_tool_calls: {tool: count, ...}
+  checks:
+    <check_name>:
+      score: number | null
+      rationale: string
+      (extra prompt-defined fields)

@@ -1,0 +1,16 @@
+name: archharness
+image: localhost/archbench-agent-archharness:v6
+runtime_version: "v6"
+default_model: gemma4              # must be a key in archbench/serving/routes.yaml
+default_max_turns: 200
+default_round_timeout: 7200
+mode: dev_capable
+dev_mount_src: src/              # relative to runtimes/archharness/; bind-mounted over dev_mount_dst when --dev is passed
+dev_mount_dst: /opt/archharness  # container path that gets overridden in dev mode
+
+# BYO-model: in-house agent loop speaks OpenAI Chat Completions to any
+# backend via the host-side proxy. The proxy resolves default_model
+# against archbench/serving/routes.yaml — that file is the source of truth
+# for what models the runtime can address. No vendor auth here; the
+# proxy handles backend auth.
+type: byo_model

@@ -1,0 +1,22 @@
+name: claude_code
+image: localhost/archbench-agent:v6
+runtime_version: "2.1.170"
+default_model: claude-opus-4-8
+default_max_turns: 200
+default_round_timeout: 7200
+mode: bake_only            # off-the-shelf; --dev flag is rejected for this runtime
+
+# Bundled: CLI binary baked into image; hardwired to vendor API.
+# Auth + allowed models come from the vendor catalog; no host-side proxy
+# routing — model id is passed directly to the vendor CLI.
+type: bundled
+vendor: anthropic
+auth:
+  method: oauth_token
+  host_path: ~/.config/archbench/oauth_token
+  container_path: /home/agent/.claude/credentials.json
+allowed_models:
+  - claude-opus-4-8
+  - claude-opus-4-7
+  - claude-sonnet-4-6
+  - claude-haiku-4-5

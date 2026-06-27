@@ -1,0 +1,33 @@
+name: prediction_calibration
+tier: 2  # Process — see docs/evaluator_framework.md
+summary: >
+  Pure-arithmetic calibration of the agent's machine-readable
+  self-prediction (prediction.json) against the real scored metric and
+  the real baseline. Answers "does the agent know how good its design
+  is?" — independent of how good the design actually is.
+contract:
+  artifact: prediction.json (workspace root; filename overridable via
+    config.prediction_files)
+  schema:
+    metric: must equal config.metric_key
+    predicted: required finite number
+    range: optional [lo, hi]
+    baseline_predicted: optional finite number
+    confidence: optional low|medium|high
+  binding: the connector snapshots prediction.json into each submit's
+    outcome row (prediction_snapshot); the snapshot on the scored
+    sim_ok row is preferred ground truth for WHAT WAS PREDICTED, so a
+    prediction edited after the submit cannot retroactively "win".
+config:
+  metric_key: REQUIRED — the scored metric name (e.g. total_cycles)
+  direction: REQUIRED — lower | higher
+  prediction_files: optional list, default [prediction.json]
+  baseline: optional path relative to challenge dir, default the
+    challenge eval baseline_file
+output:
+  class: scored | agent_missing_artifact | artifact_broken |
+    evaluator_error | not_configured  (evaluators/_base/envelope.py)
+  scored_fields: [bound_to_submit, predicted, predicted_range,
+    baseline_predicted, confidence, actual, baseline_actual,
+    direction_correct, in_range, log10_error, relative_error,
+    baseline_log10_error]

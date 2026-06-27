@@ -1,0 +1,35 @@
+name: deliverable_files
+summary: |
+  Two-layer check on the agent's required deliverable files
+  (recovered under results_dir/workspace/):
+    - Deterministic: file existence + char count vs min_chars
+    - LLM-as-judge: 0/1 binary per file using a config-supplied prompt
+
+inputs:
+  - results_dir/workspace/<required_files>
+
+config_schema:
+  required_files:
+    type: list[string]
+    desc: "Filenames (relative to workspace/) that must exist."
+  min_chars:
+    type: int
+    default: 200
+    desc: "Deterministic floor — files under this length don't get judged."
+  llm_judge:
+    type: enum [none, 0_or_1]
+    default: 0_or_1
+    desc: "If set to 0_or_1, run an LLM judge per file."
+  llm_judge_prompts:
+    type: map[filename → prompt]
+    desc: "Per-file judge prompts. File must reply JSON {score, rationale}."
+
+output_schema:
+  ok: bool
+  per_file:
+    <filename>:
+      exists: bool
+      char_count: int
+      passes_min_chars: bool
+      judge_score: 0 | 1 | null
+      judge_rationale: string

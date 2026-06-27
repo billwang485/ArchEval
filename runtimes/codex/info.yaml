@@ -1,0 +1,27 @@
+name: codex
+image: localhost/archbench-agent-codex:v6
+# Pinned Codex CLI version. gpt-5.5 requires a recent CLI (0.106.0 rejects it
+# with "requires a newer version of Codex"); 0.137.0 is confirmed working
+# end-to-end (gpt-5.5 + streamable-http MCP). Kept in sync with
+# runtimes/codex/Dockerfile (npm install -g @openai/codex@<this>).
+runtime_version: "0.137.0"
+default_model: gpt-5.5
+default_max_turns: 200
+default_round_timeout: 7200
+mode: bake_only
+
+# Bundled: OpenAI Codex CLI baked into image. Auth is a per-user
+# auth.json file mounted into ~/.codex/ inside the container.
+type: bundled
+vendor: openai
+auth:
+  method: api_key
+  host_path: ~/.codex/auth.json
+  container_path: /home/agent/.codex/auth.json
+# Reasoning effort is read from env ARCHBENCH_CODEX_EFFORT (default "medium")
+# by runner.py and passed as `-c model_reasoning_effort=<effort>`.
+allowed_models:
+  - gpt-5.5
+  - gpt-5
+  - gpt-5-mini
+  - gpt-5-codex

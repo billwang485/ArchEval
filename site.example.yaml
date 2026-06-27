@@ -1,0 +1,60 @@
+# site.example.yaml — per-machine "where" config (docs/docker_management.md §6)
+#
+# Copy this to `site.yaml` (which is GITIGNORED) and uncomment only the keys
+# your box needs. Cluster-specific absolute paths live ONLY here — never in
+# tracked code under archbench/ simulators/ runtimes/ scripts/ (CI enforces this:
+# tests/test_no_cluster_paths.py).
+#
+#   cp site.example.yaml site.yaml   # then edit site.yaml
+#
+# ZERO-CONFIG: with NO site.yaml at all, every field below resolves to a
+# portable built-in default that works on any cluster/laptop and reproduces
+# today's behavior on the origin box. You do NOT need this file to run —
+# `archbench images build` builds from each sim/runtime Dockerfile and tarballs
+# land in <repo>/docker. Configure a key here only to point at a shared NFS
+# tar pool, force an engine, or relocate scratch.
+#
+# Precedence per field (highest first):
+#   1. an explicit ARCHBENCH_* env var   (one-off run / sbatch line override)
+#   2. this site.yaml value
+#   3. the portable built-in default
+# (env > file > default — same shape as the rest of the harness.)
+#
+# ALL keys are OPTIONAL. An omitted key uses the portable default shown.
+
+schema_version: 1
+
+# --- Image tarball pool ----------------------------------------------------
+# Dir holding prebuilt *.tar (the first entry `ensure_image` searches, and
+# where `archbench images save` writes). Default: <repo>/docker.
+#   env override: ARCHBENCH_TAR_DIR
+#   Private image pool example:
+# tar_dir: /path/to/archbench-images
+
+# --- Container engine ------------------------------------------------------
+# Force the container CLI. Omit (default) to let the engine auto-detect,
+# probing PATH docker-first then podman.
+#   env override: ARCHBENCH_CONTAINER_CLI
+# container_cli: podman
+
+# --- Registry namespace ----------------------------------------------------
+# Image registry/namespace prefix. Default "" = build locally, never push
+# (today's offline behavior). Stored only; not consumed until K5.
+#   env override: ARCHBENCH_REGISTRY
+# registry: ""        # later e.g. ghcr.io/billwang485
+
+# --- Scratch / lock dir ----------------------------------------------------
+# Scratch root for transient files (e.g. the flock'd tar-load lock).
+# Default: $TMPDIR if set, else /tmp.
+#   env override: ARCHBENCH_SCRATCH_DIR
+# scratch_dir: /tmp
+#
+# Lock dir for the tar-load flock specifically. Defaults to scratch_dir.
+#   env override: ARCHBENCH_LOCK_DIR
+# lock_dir: /tmp
+
+# --- Workloads -------------------------------------------------------------
+# Root dir of simulator workloads/traces (the in-repo `workload_pools` is a
+# gitignored symlink to this on most boxes). Default: <repo>/workload_pools.
+#   env override: ARCHBENCH_WORKLOADS_DIR
+# workloads_dir: /path/to/workload_pools

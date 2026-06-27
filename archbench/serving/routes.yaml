@@ -1,0 +1,67 @@
+# archbench proxy routes — one entry per externally-visible model name.
+#
+# Each top-level key is the value an agent passes as `--model` (and the
+# value the proxy reads from the OpenAI request's `model` field).
+#
+# Schema:
+#   backend:          managed_vllm | openai | anthropic | together | bedrock
+#   model_id:         what to send in the upstream's `model` field
+#   endpoint_json:    [managed_vllm only] path to the endpoint.json the
+#                     SLURM job writes; proxy reads base_url + ready from it.
+#                     Supports ${ENV_VAR} / ~ expansion (resolved at load time)
+#                     so this shipped file stays free of any per-user path.
+#   api_key_env:      [api backends] env var name holding the API key
+#   supports_thinking: optional bool; if true, agent's `thinking=True`
+#                     will pass through as vLLM extra_body chat_template_kwargs
+
+# ---- Local managed vLLM (the only fully-implemented backend in MVP) ----
+gemma4:
+  backend: managed_vllm
+  # Set ARCHBENCH_GEMMA4_ENDPOINT_JSON to the endpoint.json your vLLM serving job writes.
+  endpoint_json: ${ARCHBENCH_GEMMA4_ENDPOINT_JSON}
+  model_id: google/gemma-4-31B-it
+  supports_thinking: true
+
+# ---- OpenAI-compatible external gateway (ppapi.ai → Gemini family) ----
+# Fully wired via backends.py::_openai_compat. The API key lives in .env as
+# PPAPI_API_KEY and is read host-side by the proxy — it NEVER enters the agent
+# container (§1.13/§1.14). Route name == model_id == the agent's --model value.
+gemini-3.1-flash-lite-preview:
+  backend: openai_compat
+  base_url: https://app-us.ppapi.ai/v1
+  api_key_env: PPAPI_API_KEY
+  model_id: gemini-3.1-flash-lite-preview
+  upstream_timeout_s: 600
+
+# gemini-3.5-flash — thinking-capable (server-side reasoning ON by default;
+# ~500 reasoning tokens/turn verified). Replaces the no-thinking flash-lite for a
+# FAIR comparison vs codex(reasoning) / gemma(enable_thinking).
+gemini-3.5-flash:
+  backend: openai_compat
+  base_url: https://app-us.ppapi.ai/v1
+  api_key_env: PPAPI_API_KEY
+  model_id: gemini-3.5-flash
+  upstream_timeout_s: 600
+  supports_thinking: true
+
+# ---- External APIs (STUBBED in MVP — uncomment + ensure API key when ready) ----
+#
+# gpt-5:
+#   backend: openai
+#   api_key_env: OPENAI_API_KEY
+#   model_id: gpt-5
+#
+# claude-opus-4-7-api:
+#   backend: anthropic
+#   api_key_env: ANTHROPIC_API_KEY
+#   model_id: claude-opus-4-7
+#
+# deepseek-r1-together:
+#   backend: together
+#   api_key_env: TOGETHER_API_KEY
+#   model_id: deepseek-ai/DeepSeek-R1
+#
+# claude-bedrock:
+#   backend: bedrock
+#   api_key_env: AWS_BEDROCK_API_KEY
+#   model_id: anthropic.claude-3-5-sonnet-20240620-v1:0
